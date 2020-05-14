@@ -1,11 +1,8 @@
 const express = require('express');
 const app = express();
 const request = require('request');
-const bodyPaser = require('body-parser');
 
-let path,
-count=1,
-end_cursor,
+let end_cursor,
 pre_end_cursor;
 
 //middlewares
@@ -16,11 +13,11 @@ app.get('/', (req,res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-app.post('/send', (req,res) => {
-  path = req.body.url;
-  res.send(`Se esta ejecutando el programa...`)
-
-  resolucion_v2(path);
+app.post('/send', (req,res) => { 
+  let usuarios = [];  
+  let link_Inicial = req.body.url + '?__a=1';
+  res.send(`Se esta ejecutando el programa...en Url: ${link_Inicial}`);
+  resolucion(link_Inicial,usuarios);
 });
 
 //starting server
@@ -28,31 +25,30 @@ app.listen(3000, () => {
   console.log('Example app listening on port 3000!');
 });
 
-function resolucion_v2(path) {
+//declaracion de funciones
+function resolucion_v2(path,listaDeUsuarios) {
   request(path, function(err, res, body) {
       let edges = getEdges(body);
-      mostrarDatos(edges);
+      guardarDatos(edges,listaDeUsuarios);
       if (hasNextPage(body)) {
-          if(end_cursor!="undefine"){
+          if(end_cursor!="undefine") {
             pre_end_cursor = end_cursor;
           }
-          resolucion_v2(generarUrl(path, body, pre_end_cursor));
+          resolucion_v2(generarUrl(path, body, pre_end_cursor),listaDeUsuarios);
       } else {
-          console.log('FIN');
+        mostrarDatos(listaDeUsuarios);
+        console.log('FIN');
       }
   })
 }
 
-
-
-
-//declaracion de funciones
-let mostrarDatos = edges => {
-  edges.forEach(element => {
+let mostrarDatos = listaDeUsuarios => {
+    let count=1;
+    listaDeUsuarios.forEach(element => {
       console.log(`********Usuario ${count++}********`);
-      console.log(`User name: ${element.node.username}`);
-      console.log(`Full Name: ${element.node.full_name}`);
-      console.log(`Is Private: ${element.node.is_private}`);
+      console.log(`User name: ${element.username}`);
+      console.log(`Full Name: ${element.full_name}`);
+      console.log(`Is Private: ${element.is_private}`);
   });
 }
 
@@ -68,7 +64,6 @@ function getEdges(body) {
   return JSON.parse(body).data.shortcode_media.edge_liked_by.edges;
 }
 
-
 const generarUrl = (path, body, pre_end_cursor) => {
 end_cursor = getEnd_cursor(body);
 if(path.includes('"after":"')) {
@@ -78,4 +73,28 @@ if(path.includes('"after":"')) {
     path = path.replace('}', subcadena);
 }
 return path;
+}
+
+const guardarDatos = (edges,listaDeUsuarios) => {
+    edges.forEach(element => {
+        listaDeUsuarios.push(element.node);
+    });
+}
+
+function getShortcode(body) {
+  return JSON.parse(body).graphql.shortcode_media.shortcode;
+}
+
+const resolucion = (link_Inicial,usuarios) => {
+  request(link_Inicial, function(err, res, body) {
+    shortcode = getShortcode(body);
+    let path = queryHash(shortcode);
+    console.log(`path: ${path}`);
+    resolucion_v2(path,usuarios);
+  });
+}
+
+const queryHash = (shortcode) => {
+  let urlInstagram = 'https://www.instagram.com/graphql/query/?query_hash=d5d763b1e2acf209d62d22d184488e57&variables={"shortcode":valorAreemplazar,"include_reel":true,"first":50}';
+  return urlInstagram.replace('valorAreemplazar','"'+ shortcode +'"');
 }
