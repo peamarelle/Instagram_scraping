@@ -3,29 +3,25 @@ const app = express();
 const request = require('request');
 
 let end_cursor,
-pre_end_cursor;
+pre_end_cursor,
+usuarios = [];
 
-//middlewares
 app.use(express.urlencoded({extended: false}));
 
-//router
 app.get('/', (req,res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-app.post('/send', (req,res) => { 
-  let usuarios = [];  
+app.post('/send', (req,res) => {  
   let link_Inicial = req.body.url + '?__a=1';
   res.send(`Se esta ejecutando el programa...en Url: ${link_Inicial}`);
   resolucion(link_Inicial,usuarios);
 });
 
-//starting server
 app.listen(3000, () => {
   console.log('Example app listening on port 3000!');
 });
 
-//declaracion de funciones
 function resolucion_v2(path,listaDeUsuarios) {
   request(path, function(err, res, body) {
       let edges = getEdges(body);
@@ -42,7 +38,7 @@ function resolucion_v2(path,listaDeUsuarios) {
   })
 }
 
-let mostrarDatos = listaDeUsuarios => {
+function mostrarDatos(listaDeUsuarios) {
     let count=1;
     listaDeUsuarios.forEach(element => {
       console.log(`********Usuario ${count++}********`);
@@ -89,12 +85,13 @@ const resolucion = (link_Inicial,usuarios) => {
   request(link_Inicial, function(err, res, body) {
     shortcode = getShortcode(body);
     let path = queryHash(shortcode);
-    console.log(`path: ${path}`);
     resolucion_v2(path,usuarios);
   });
 }
 
 const queryHash = (shortcode) => {
-  let urlInstagram = 'https://www.instagram.com/graphql/query/?query_hash=d5d763b1e2acf209d62d22d184488e57&variables={"shortcode":valorAreemplazar,"include_reel":true,"first":50}';
-  return urlInstagram.replace('valorAreemplazar','"'+ shortcode +'"');
+  let values = {"shortcode":"","include_reel":true,"first":50};
+  let urlInstagram = 'https://www.instagram.com/graphql/query/?query_hash=d5d763b1e2acf209d62d22d184488e57&variables=';
+  values.shortcode = shortcode;
+  return urlInstagram + JSON.stringify(values);
 }
