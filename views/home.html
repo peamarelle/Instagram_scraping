@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="estilos.css"> 
+    <title>Document</title>
+</head>
+<body style="background:#6d6960">
+<table>
+    <tr class="row1">
+        <th>User Name</th>
+        <th>Full Name</th>
+        <th>Su cuenta es privada?</th>
+    </tr>
+    <% usuarios.forEach(usuario => { %>
+        <tr class="row2"> 
+            <td><%= usuario.username %></td>
+            <td>
+                <%= usuario.full_name %>
+            </td>
+            <td>
+                <%= usuario.is_private %>
+            </td>
+        </tr>
+    <% }) %>
+    </table>
+</body>
+</html>
+
+
+   

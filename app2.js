@@ -1,25 +1,34 @@
 const express = require('express');
 const app = express();
 const request = require('request');
+const ejs = require('ejs');
 
 let end_cursor,
 pre_end_cursor,
 usuarios = [];
 
+app.use(express.static('public'));
 app.use(express.urlencoded({extended: false}));
+
+app.engine('html', ejs.renderFile);
+app.set('view engine','html');
 
 app.get('/', (req,res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-app.post('/send', (req,res) => {  
+app.post('/', (req,res) => {  
+  res.send('Procesando...');
   let link_Inicial = req.body.url + '?__a=1';
-  res.send(`Se esta ejecutando el programa...en Url: ${link_Inicial}`);
-  resolucion(link_Inicial,usuarios);
+  usuarios = resolucion(link_Inicial);
+});
+
+app.get('/usuarios',(req,res) => {  
+  res.render('home.html',{usuarios: usuarios});
 });
 
 app.listen(3000, () => {
-  console.log('Example app listening on port 3000!');
+  console.log('App listening on port 3000!');
 });
 
 function resolucion_v2(path,listaDeUsuarios) {
@@ -27,13 +36,12 @@ function resolucion_v2(path,listaDeUsuarios) {
       let edges = getEdges(body);
       guardarDatos(edges,listaDeUsuarios);
       if (hasNextPage(body)) {
-          if(end_cursor!="undefine") {
+          if(end_cursor!==undefined) {
             pre_end_cursor = end_cursor;
           }
           resolucion_v2(generarUrl(path, body, pre_end_cursor),listaDeUsuarios);
       } else {
         mostrarDatos(listaDeUsuarios);
-        console.log('FIN');
       }
   })
 }
@@ -81,16 +89,18 @@ function getShortcode(body) {
   return JSON.parse(body).graphql.shortcode_media.shortcode;
 }
 
-const resolucion = (link_Inicial,usuarios) => {
+const resolucion = (link_Inicial) => {
+  let listaDeUsuarios = [];
   request(link_Inicial, function(err, res, body) {
     shortcode = getShortcode(body);
     let path = queryHash(shortcode);
-    resolucion_v2(path,usuarios);
+    resolucion_v2(path,listaDeUsuarios);
   });
+  return listaDeUsuarios;
 }
 
 const queryHash = (shortcode) => {
-  let values = {"shortcode":"","include_reel":true,"first":50};
+  let values = {"shortcode": "","include_reel": true,"first": 50};
   let urlInstagram = 'https://www.instagram.com/graphql/query/?query_hash=d5d763b1e2acf209d62d22d184488e57&variables=';
   values.shortcode = shortcode;
   return urlInstagram + JSON.stringify(values);
