@@ -17,14 +17,20 @@ app.get('/', (req,res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-app.post('/', (req,res) => {  
-  res.send('Procesando...');
+app.post('/', (req,res) => { 
   let link_Inicial = req.body.url + '?__a=1';
-  usuarios = resolucion(link_Inicial);
-});
-
-app.get('/usuarios',(req,res) => {  
-  res.render('home.html',{usuarios: usuarios});
+  resolucion(link_Inicial)
+  .then(obj=>{
+    let count=1;
+    let users='<h1>***Likes 👍***</h1></br>';
+    setTimeout(() => {
+      usuarios.forEach(element => {
+        users+= `<h3>***Usuario ${count++}***</h3>`+ `<h3>Nombre de Usuario: ${element.username} | Nombre Completo: ${element.full_name} | Su cuenta es privada?: ${element.is_private}</h3>`;
+      });
+      res.send(users);
+    }, 5000);
+  })
+  .catch(err=>{console.log(err)});
 });
 
 app.listen(3000, () => {
@@ -90,13 +96,14 @@ function getShortcode(body) {
 }
 
 const resolucion = (link_Inicial) => {
-  let listaDeUsuarios = [];
-  request(link_Inicial, function(err, res, body) {
-    shortcode = getShortcode(body);
-    let path = queryHash(shortcode);
-    resolucion_v2(path,listaDeUsuarios);
+  return new Promise((resolve,reject) => {
+    resolve(
+      request(link_Inicial, function(err, res, body) {
+      shortcode = getShortcode(body);
+      let path = queryHash(shortcode);
+      resolucion_v2(path,usuarios);
+    }))
   });
-  return listaDeUsuarios;
 }
 
 const queryHash = (shortcode) => {
