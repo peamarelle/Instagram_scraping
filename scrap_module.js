@@ -3,15 +3,14 @@ const request = require('request');
 let end_cursor,
 pre_end_cursor;
 
-const resolucion = (link_Inicial,usuarios) => {
-    return new Promise((resolve,reject) => {
-      resolve(
-        request(link_Inicial, function(err, res, body) {
-        let shortcode = getShortcode(body);
-        let path = queryHash(shortcode);
-        resolucion_v2(path,usuarios);
-      }))
+const resolucion = (link_Inicial) => {
+    let usuarios = [];
+    request(link_Inicial, function(err, res, body) {
+      let shortcode = getShortcode(body);
+      let path = queryHash(shortcode);
+      resolucion_v2(path,usuarios);
     });
+    return usuarios;
   }
   function resolucion_v2(path,listaDeUsuarios) {
     request(path, function(err, res, body) {
@@ -70,7 +69,6 @@ const resolucion = (link_Inicial,usuarios) => {
   function getShortcode(body) {
     return JSON.parse(body).graphql.shortcode_media.shortcode;
   }
-  
   
   const queryHash = (shortcode) => {
     let values = {"shortcode": "","include_reel": true,"first": 50};
